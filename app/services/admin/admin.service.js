@@ -126,14 +126,26 @@ const getallorders = async (req, res) => {
 };
 
 
-function generateUniqueId() {
-  // Generate a random 5-digit number
-  const randomDigits = Math.floor(10000 + Math.random() * 90000);
+function generateString() {
+  // Get current date and time
+  const currentDate = new Date();
 
-  // Combine the letter 'O' with the random digits to form the ID
-  const uniqueId = 'A' + randomDigits;
+  // Extract hours and month
+  const currentHour = currentDate.getHours();
+  const currentMonth = currentDate.getMonth() + 1; // Adding 1 because months are zero-indexed
 
-  return uniqueId;
+  // Generate random two-digit number for the last two digits
+  const randomDigits = Math.floor(Math.random() * 100);
+
+  // Format components to ensure they have leading zeros if needed
+  const formattedHour = currentHour.toString().padStart(2, '0');
+  const formattedMonth = currentMonth.toString().padStart(2, '0');
+  const formattedRandomDigits = randomDigits.toString().padStart(2, '0');
+
+  // Concatenate components to form the final string
+  const resultString = `A${formattedHour}${formattedMonth}${formattedRandomDigits}`;
+
+  return resultString;
 }
 
 
@@ -148,8 +160,18 @@ const userregister = async (req, res) => {
   //     message: "Admin not found with token " + req.body.adminToken
   //   });
   // }
+  const checkuser = await User.findOne({
+    where: {
+      email: req.body.email
+    }
+  });
 
-  const clinic_id = generateUniqueId();
+  console.log(checkuser)
+  if (checkuser) {
+    return res.status(404).send({ message: "User Already exist." });
+  }
+
+  const clinic_id = generateString();
   const state = {
     clinicid: clinic_id
   }
