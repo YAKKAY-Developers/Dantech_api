@@ -20,7 +20,6 @@ module.exports = (sequelize, Sequelize) => {
     },
     userToken: {
       type: Sequelize.STRING,
-      primaryKey: true
     },
     resetToken: {
       type: Sequelize.STRING
@@ -32,14 +31,16 @@ module.exports = (sequelize, Sequelize) => {
     accessToken: {
       type: Sequelize.STRING
     }
-  }, {
-    indexes: [
-      {
-        unique: true,
-        fields: ['userToken', 'email', 'clinicid'] // Replace with the actual column name being referenced
-      }
-    ]
-  });
+  },
+    // {
+    //   indexes: [
+    //     {
+    //       unique: true,
+    //       fields: ['userToken', 'email', 'clinicid'] // Replace with the actual column name being referenced
+    //     }
+    //   ]
+    // }
+  );
 
   return User;
 };

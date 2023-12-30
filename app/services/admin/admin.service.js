@@ -50,10 +50,23 @@ const rejectuser = async (req, res) => {
 }
 
 const approveuser = async (req, res) => {
+  const admin = await Admin.findOne({
+    where: {
+      adminToken: req.body.adminToken
+    }
+  });
 
+  if (!admin) {
+    res.status(404).send({ message: "Cannot find admin with token " + req.body.adminToken })
+  }
   const user = await User.findOne({
     where: { userToken: req.body.userToken },
   });
+
+  const statusDesc = await db.statusdesc.findOne({
+    where: { statuscode: "AC2000" },
+  });
+
   Status.update(
     {
       statuscode: "AC2000",
@@ -89,10 +102,34 @@ const getAllUser = async (req, res) => {
         adminToken: req.body.userToken
       }
     });
-    const user = await User.findAll()
-    const state = await Status.findAll()
+    const user = await User.findAll({
+      include: [
+        {
+          model: db.statusdesc,
+          as: 'statusdesc',
+          attributes: ['statuscode', 'description'],
+          through: { model: User.sequelize.models.userstatusdesc, as: 'userstatusdesc' },
+        },
+        {
+          model: db.profile,
+          as: 'profileuser',
+          attributes: ["image", "clinicid", "clinicName", "email", "address", "phonenumber", "city", "alternativenumber", "state", "pincode", "country"],
+        },
+        {
+          model: db.bankdetail,
+          as: 'bankdetailuser',
+          attributes: ["bankacnumber", "ifsc", "bankbranch", "upiid", "gst"],
+        },
+        {
+          model: db.userdesc,
+          as: 'userdesc',
+          attributes: ["description"],
+        }
+      ],
+    });
+
     res.status(200).send({
-      user, state
+      user
     });
   }
   catch (err) {
@@ -166,15 +203,13 @@ const userregister = async (req, res) => {
     }
   });
 
-  console.log(checkuser)
+  // console.log(checkuser)
   if (checkuser) {
     return res.status(404).send({ message: "User Already exist." });
   }
 
+
   const clinic_id = generateString();
-  const state = {
-    clinicid: clinic_id
-  }
 
   const user = {
     clinicid: clinic_id,
@@ -187,32 +222,43 @@ const userregister = async (req, res) => {
   };
 
   try {
-    // Save professional in the database
-    const newUser = await User.create(user);
-    // console.log(newUser);
-    const userstat = await Status.create(state);
-    // console.log(userstat);
-    const newprofile = await Profile.create(user);
-    // console.log(newprofile);
-    const newbankprofile = await Bankprofile.create(state);
-    // Exclude the specified fields from the output
+
+    const statusDesc = await db.statusdesc.findOne({
+      where: { statuscode: "WA4000" },
+    });
+    const newUser = await db.user.create(user);
+
+    user.userId = newUser.id;
+
+    const newprofile = await db.profile.create(user);
+    // Find the statusdesc with statuscode "ww4000"
+
+
+    const newbankprofile = await Bankprofile.create(user);
+
+    const newdesc = await db.userdesc.create(user);
+
+    // Associate the user with the statusdesc
+    if (statusDesc) {
+      await newUser.addStatusdesc(statusDesc);
+    }
+
     const result = {
-      // fullName: newUser.firstName+' '+newUser.lastName,
-      // clinicid: newUser.clinicid,
       clinicName: newUser.clinicName,
       address: newUser.clinicName,
       phonenumber: newUser.phonenumber,
       email: newUser.email,
       password: newUser.password,
       userToken: newUser.userToken,
-
+      statusdesc: [{ statuscode: statusDesc.statuscode, description: statusDesc.description }],
     };
 
-    res.send(result);
+    emailservice.userregistermail(user.email, user.clinicName, user.clinicid, user.address, user.phonenumber);
+
+    res.status(200).send(result);
   } catch (err) {
     res.status(500).send({
-      message:
-        err.message || "Some error occurred while creating user."
+      message: "Some error occurred while creating user.",
     });
   }
 };

@@ -22,136 +22,153 @@ const db = {};
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
-db.user = require("./user/user.model.js")(sequelize, Sequelize);
-db.userinfo = require("./user/userinfo.model.js")(sequelize, Sequelize);
+// db.user = require("./user/user.model.js")(sequelize, Sequelize);
+// db.userinfo = require("./user/userinfo.model.js")(sequelize, Sequelize);
 db.admin = require("./admin/admin.model")(sequelize, Sequelize);
-db.admininfo = require("./admin/admininfo.model")(sequelize, Sequelize);
-db.organization = require("./organization/organization.model")(sequelize, Sequelize);
-db.surveyForm = require("./surveyForm/surveyForm.model.js")(sequelize, Sequelize);
-db.questions = require("./questions/questions.model.js")(sequelize, Sequelize);
-db.options = require("./options/options.model.js")(sequelize, Sequelize);
-db.surveyResult = require("./surveyResult/surveyResult.model.js")(sequelize, Sequelize);
-db.surveyResultDetails = require("./surveyResultDetails/surveyResultDetails.model.js")(sequelize, Sequelize);
-db.surveyInfo = require("./surveyInfo/surveyinfo.model.js")(sequelize, Sequelize);
-db.organizationRoll = require("./organizationRoll/organizationRoll.mode.js")(sequelize, Sequelize);
+// db.admininfo = require("./admin/admininfo.model")(sequelize, Sequelize);
+// db.organization = require("./organization/organization.model")(sequelize, Sequelize);
+// db.surveyForm = require("./surveyForm/surveyForm.model.js")(sequelize, Sequelize);
+// db.questions = require("./questions/questions.model.js")(sequelize, Sequelize);
+// db.options = require("./options/options.model.js")(sequelize, Sequelize);
+// db.surveyResult = require("./surveyResult/surveyResult.model.js")(sequelize, Sequelize);
+// db.surveyResultDetails = require("./surveyResultDetails/surveyResultDetails.model.js")(sequelize, Sequelize);
+// db.surveyInfo = require("./surveyInfo/surveyinfo.model.js")(sequelize, Sequelize);
+// db.organizationRoll = require("./organizationRoll/organizationRoll.mode.js")(sequelize, Sequelize);
 db.doctor = require("./doctors/doctors.model.js")(sequelize, Sequelize);
-db.status = require("./status/userstatus.model.js")(sequelize, Sequelize);
+// db.status = require("./status/userstatus.model.js")(sequelize, Sequelize);
+// db.statusdesc = require("./status/statusdesc.model.js")(sequelize, Sequelize);
 db.order = require("./order/orderform.model.js")(sequelize, Sequelize);
 db.profile = require("./profile/profiles.model.js")(sequelize, Sequelize);
 db.bankdetail = require("./profile/profile_bank.model.js")(sequelize, Sequelize);
+db.ordercategory = require("./order/ordercategory.model.js")(sequelize, Sequelize);
+db.orders = require("./order/orders.model.js")(sequelize, Sequelize);
+db.orderstatus = require("./order/orderstatus.model.js")(sequelize, Sequelize);
+db.workflow = require("./workflow/workflow.model.js")(sequelize, Sequelize);
+db.workflowassign = require("./workflow/workflowassignment.model.js")(sequelize, Sequelize);
+db.workflowdetail = require("./workflow/workflowdetails.model.js")(sequelize, Sequelize);
+db.workflowowner = require("./workflow/workflowowner.model.js")(sequelize, Sequelize);
+db.assignee = require("./workflow/assigne.model.js")(sequelize, Sequelize);
+db.jobs = require("./jobs/job.model.js")(sequelize, Sequelize);
+db.jobstatus = require("./jobs/job.status.model.js")(sequelize, Sequelize);
+db.jobassignment = require("./jobs/jobassignment.model.js")(sequelize, Sequelize);
+db.jobdetail = require("./jobs/jobdetails.model.js")(sequelize, Sequelize);
+db.jobnotification = require("./jobs/jobnotification.model.js")(sequelize, Sequelize);
 
-// SurveyForm to Questions association
-// db.surveyForm.hasMany(db.questions, {
-//   foreignKey: 'surveyFormId',
-//   as: 'questions',
-// });
+db.statusdesc = require("./status/statusdesc.model.js")(sequelize, Sequelize);
 
-// // Questions to Options association
-// db.questions.hasMany(db.options, {
-//   foreignKey: 'questionId',
-//   as: 'options',
-// });
+db.user = require("./user/user.model.js")(sequelize, Sequelize);
+db.userdesc = require("./user/userdesc.model.js")(sequelize, Sequelize);
 
 
 
-// SurveyForm to Questions association
-db.surveyForm.hasMany(db.questions, {
-  foreignKey: 'surveyFormId',
-  as: 'questions',
+// status and user link
+db.user.belongsToMany(db.statusdesc, {
+  through: "userstatusdesc",
+  foreignKey: "userId",
+  otherKey: "statusdescId",
+  as: "statusdesc"
 });
 
-// Questions to SurveyForm association
-db.questions.belongsTo(db.surveyForm, {
-  foreignKey: 'surveyFormId',
-  as: 'surveyForm',
-});
-
-
-
-// // SurveyForm to Questions association
-// db.user.hasMany(db.status, {
-//   foreignKey: 'clinicid',
-//   as: 'status',
-// });
-
-// // Questions to SurveyForm association
-// db.status.belongsTo(db.user, {
-//   foreignKey: 'clinicid',
-//   as: 'user ',
-// });
-
-
-db.questions.hasMany(db.options, {
-  foreignKey: 'questionId',
-  as: 'options'
+db.statusdesc.belongsToMany(db.user, {
+  through: "userstatusdesc",
+  foreignKey: "statusdescId",
+  otherKey: "userId",
+  as: "user"
 });
 
 
-db.options.belongsTo(db.questions, {
-  foreignKey: 'questionId',
-  as: 'question'
+//profile and user link
+db.user.hasOne(db.profile, {
+  foreignKey: "userId",
+  as: "profileuser"
+}
+);
+db.profile.belongsTo(db.user, {
+  foreignKey: "userId"
 });
 
-db.surveyForm.hasMany(db.surveyResult, {
-  foreignKey: 'surveyFormId',
-  as: 'surveyResult',
-});
-db.surveyResult.belongsTo(db.surveyForm, {
-  foreignKey: 'surveyFormId',
-  as: 'surveyForm',
-});
-
-db.organization.hasMany(db.surveyResult, {
-  foreignKey: 'organizationId',
-  as: 'surveyResult',
-});
-db.surveyResult.belongsTo(db.organization, {
-  foreignKey: 'organizationId',
-  as: 'organization',
+//bankdetails and user link
+db.user.hasOne(db.bankdetail, {
+  foreignKey: "userId",
+  as: "bankdetailuser"
+}
+);
+db.bankdetail.belongsTo(db.user, {
+  foreignKey: "userId"
 });
 
-db.surveyResult.hasMany(db.surveyResultDetails, {
-  foreignKey: 'surveyResultId',
-  as: 'surveyResultDetails',
-});
-// SurveyResultDetails to SurveyResult association
-db.surveyResultDetails.belongsTo(db.surveyResult, {
-  foreignKey: 'surveyResultId',
-  as: 'surveyResult',
-});
-
-// SurveyResultDetails to SurveyForm association
-db.surveyResultDetails.belongsTo(db.surveyForm, {
-  foreignKey: 'surveyFormId',
-  as: 'surveyForm',
+// user and user description link
+db.user.hasOne(db.userdesc, {
+  foreignKey: "userId",
+  as: "userdesc"
+}
+);
+db.userdesc.belongsTo(db.user, {
+  foreignKey: "userId"
 });
 
-// SurveyResultDetails to Questions association
-db.surveyResultDetails.belongsTo(db.questions, {
-  foreignKey: 'questionId',
-  as: 'question',
+//user and doctors
+db.user.hasMany(db.doctor, {
+  foreignKey: "userId",
+  as: "userdoctor"
+}
+);
+db.doctor.belongsTo(db.user, {
+  foreignKey: "userId"
 });
 
-// // SurveyResultDetails to Options association
-// db.surveyResultDetails.belongsTo(db.options, {
+//user and order
+db.user.hasMany(db.orders, {
+  foreignKey: "userId",
+  as: "userorders"
+}
+);
+db.orders.belongsTo(db.user, {
+  foreignKey: "userId"
+});
 
-//   as: 'option',
-// });
+//user and orderform
+db.user.hasMany(db.order, {
+  foreignKey: "userId",
+  as: "userorder"
+}
+);
+db.order.belongsTo(db.user, {
+  foreignKey: "userId"
+});
 
-db.user.hasMany(db.surveyResult, {
-  foreignKey: 'surveyFormId',
-  as: 'surveyResult',
+//workflow and workflow assignment
+db.workflow.hasMany(db.workflowassign, {
+  foreignKey: "workId",
+  as: "workflow_assign"
+}
+);
+db.workflowassign.belongsTo(db.workflow, {
+  foreignKey: "workId"
 });
-db.surveyResult.belongsTo(db.user, {
-  foreignKey: 'userToken',
-  as: 'user',
+
+//workflow and workflow owner
+db.workflow.hasMany(db.workflowowner, {
+  foreignKey: "workId",
+  as: "workflow_owner"
+}
+);
+db.workflowowner.belongsTo(db.workflow, {
+  foreignKey: "workId"
 });
-db.surveyInfo.belongsTo(db.user, {
-  foreignKey: 'userToken',
-  as: 'user',
+
+
+//workflow and workflow details
+db.workflow.hasMany(db.workflowdetail, {
+  foreignKey: "workId",
+  as: "workflow_detail"
+}
+);
+db.workflowdetail.belongsTo(db.workflow, {
+  foreignKey: "workId"
 });
-db.surveyInfo.belongsTo(db.organizationRoll, {
-  foreignKey: 'organizationRollId',
-  as: 'organizationRoll',
-});
+
+
+
+
 module.exports = db;

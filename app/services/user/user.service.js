@@ -64,30 +64,20 @@ function concatDataValues(profile, bankdetails) {
 
 // Create a user
 const register = async (req, res) => {
-  // const admin = await Admin.findOne({
-  //   where: { adminToken: req.body.adminToken } ,
-  //   attributes: { exclude: ['createdAt', 'updatedAt'] },
-  // });
-  // if (!admin) {
-  //   return res.status(404).send({
-  //     message: "Admin not found with token " + req.body.adminToken
-  //   });
-  // }
   const checkuser = await User.findOne({
     where: {
       email: req.body.email
     }
   });
 
-  console.log(checkuser)
+  // console.log(checkuser)
   if (checkuser) {
     return res.status(404).send({ message: "User Already exist." });
   }
 
+
   const clinic_id = generateString();
-  const state = {
-    clinicid: clinic_id,
-  }
+
   const user = {
     clinicid: clinic_id,
     clinicName: req.body.name,
@@ -98,42 +88,46 @@ const register = async (req, res) => {
     userToken: tokgen2.generate(),
   };
 
-
-
   try {
-    // Save professional in the database
-    const newUser = await User.create(user);
-    // console.log(newUser);
-    const userstat = await Status.create(state);
-    // console.log(userstat);
-    const newprofile = await Profile.create(user);
-    // console.log(newprofile);
-    const newbankprofile = await Bankprofile.create(state);
+
+    const statusDesc = await db.statusdesc.findOne({
+      where: { statuscode: "WA4000" },
+    });
+    const newUser = await db.user.create(user);
+
+    user.userId = newUser.id;
+
+    const newprofile = await db.profile.create(user);
+    // Find the statusdesc with statuscode "ww4000"
 
 
-    // Exclude the specified fields from the output
+    const newbankprofile = await Bankprofile.create(user);
+
+    const newdesc = await db.userdesc.create(user);
+
+    // Associate the user with the statusdesc
+    if (statusDesc) {
+      await newUser.addStatusdesc(statusDesc);
+    }
+
     const result = {
-      // fullName: newUser.firstName+' '+newUser.lastName,
-      // clinicid: newUser.clinicid,
       clinicName: newUser.clinicName,
       address: newUser.clinicName,
       phonenumber: newUser.phonenumber,
       email: newUser.email,
       password: newUser.password,
       userToken: newUser.userToken,
-
+      statusdesc: [{ statuscode: statusDesc.statuscode, description: statusDesc.description }],
     };
 
     emailservice.userregistermail(user.email, user.clinicName, user.clinicid, user.address, user.phonenumber);
 
-    res.send(result);
+    res.status(200).send(result);
   } catch (err) {
     res.status(500).send({
-      message:
-        "Some error occurred while creating user."
+      message: "Some error occurred while creating user.",
     });
   }
-
 };
 
 
@@ -376,42 +370,131 @@ const getAllUser = async (req, res) => {
       });
     });
 };
+
+// const getOneUser = async (req, res) => {
+//   try {
+//     const user = await User.findOne({
+//       where: { userToken: req.body.userToken },
+//     });
+
+//     const stat = await Status.findOne({
+//       where: {
+//         clinicid: user.clinicid
+//       }
+//     });
+
+//     const profileo = await Profile.findOne({
+//       where: { clinicid: user.clinicid }
+//     });
+//     const bankprofile = await Bankprofile.findOne({
+//       where: { clinicid: user.clinicid }
+//     });
+//     const profile = concatDataValues(profileo, bankprofile);
+
+//     if (!user) {
+//       return res.status(404).send({
+//         message: 'User not found with userToken',
+//       });
+//     }
+
+//     const { email, userToken, photo, clinicName } = user;
+//     const clinicname = `${clinicName}`;
+//     const { statuscode, description } = stat;
+//     res.status(200).send({
+//       clinicname, profile,
+//       photo,
+//       email,
+//       userToken, statuscode, description
+//     });
+//   } catch (err) {
+//     res.status(500).send({
+//       message: 'Error retrieving User with userToken',
+//     });
+//   }
+// };
+
 const getOneUser = async (req, res) => {
   try {
     const user = await User.findOne({
       where: { userToken: req.body.userToken },
+      include: [
+        {
+          model: db.statusdesc,
+          as: 'statusdesc',
+          attributes: ['statuscode', 'description'],
+          through: { model: User.sequelize.models.userstatusdesc, as: 'userstatusdesc' },
+        },
+        {
+          model: db.profile,
+          as: 'profileuser',
+          attributes: ["image", "clinicid", "clinicName", "email", "address", "phonenumber", "city", "alternativenumber", "state", "pincode", "country"],
+        },
+        {
+          model: db.bankdetail,
+          as: 'bankdetailuser',
+          attributes: ["bankacnumber", "ifsc", "bankbranch", "upiid", "gst"],
+        },
+        {
+          model: db.userdesc,
+          as: 'userdesc',
+          attributes: ["description"],
+        }
+      ],
     });
 
-    const stat = await Status.findOne({
-      where: {
-        clinicid: user.clinicid
-      }
-    });
-
-    const profileo = await Profile.findOne({
+    const doctor = await db.doctor.findAll({
       where: { clinicid: user.clinicid }
     });
-    const bankprofile = await Bankprofile.findOne({
-      where: { clinicid: user.clinicid }
-    });
-    const profile = concatDataValues(profileo, bankprofile);
+    if (doctor.length > 0) {
+      var doctor_count = true;
+    } else {
+      var doctor_count = false;
+    };
 
+
+
+
+    // console.log(user.profileuser)
     if (!user) {
       return res.status(404).send({
         message: 'User not found with userToken',
       });
     }
 
-    const { email, userToken, photo, clinicName } = user;
+    const { id, email, userToken, clinicName } = user;
     const clinicname = `${clinicName}`;
-    const { statuscode, description } = stat;
+    const { statuscode } = user.statusdesc;
+    var userDetail = user.statusdesc;
+    var profile = concatDataValues(user.profileuser, user.bankdetailuser);
+    var userDesc = user.userdesc;
+
+
+    // Using the alias 'statusdesc->userstatusdesc' to access the associated data
+    // const userStatusDesc = user['statusdesc->userstatusdesc'];
+    // console.log(userStatusDesc)
+
+    // if (!userStatusDesc) {
+    //   return res.status(404).send({
+    //     message: 'UserStatusDesc not found for the user',
+    //   });
+    // }
+
+    // const { statusdesc } = userStatusDesc;
+    // const { statuscode, description } = statusdesc;
+
     res.status(200).send({
-      clinicname, profile,
-      photo,
+      clinicname,
       email,
-      userToken, statuscode, description
+      userToken,
+      userDetail,
+      profile,
+      userDesc,
+      doctor_count,
+      // statuscode,
+      // description,
     });
   } catch (err) {
+    console.error(err);
     res.status(500).send({
       message: 'Error retrieving User with userToken',
     });
