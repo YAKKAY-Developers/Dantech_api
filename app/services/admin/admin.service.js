@@ -15,83 +15,140 @@ const emailservice = require('../../services/email.service');
 
 
 const rejectuser = async (req, res) => {
+  try {
+    const user = await User.findOne({
+      where: { userToken: req.body.userToken },
+    });
+    const statusDesc = await db.statusdesc.findOne({
+      where: { statuscode: "RJ5000" },
+    });
 
-  const user = await User.findOne({
-    where: { userToken: req.body.userToken },
-  });
-
-  descrip = req.body.description.description;
-  Status.update(
-    {
-      statuscode: "RJ5000",
-      description: req.body.description.description,
-    },
-    {
+    descrip = req.body.description.description;
+    db.userdesc.update({
+      description: descrip,
+    }, {
       where: {
-        clinicid: user.clinicid
+        userId: user.id
       }
-    }
-  ).then(rowsAffected => {
-    if (rowsAffected[0] === 0) {
-      return res.status(404).send({
-        message: "user not found with token " + req.body.userToken
+    })
+
+    const description = {
+      userId: user.id,
+      description: descrip
+    };
+
+    if (statusDesc) {
+      // Ensure user and status are found before proceeding
+      await user.setStatusdesc(statusDesc);
+      console.log('User status updated successfully.');
+
+      return res.status(200).json({ message: 'User status updated successfully.' });
+      emailservice.rejectedmail(user.email, user.clinicName, user.clinicid, descrip);
+      res.send({
+        message: "user was updated successfully with token " + req.body.userToken
       });
+    } else {
+      console.log('Status code not found in statusdesc table.');
+      return res.status(404).json({ error: 'Status code not found in statusdesc table.' });
     }
-    emailservice.rejectedmail(user.email, user.clinicName, user.clinicid, descrip);
-    res.send({
-      message: "user was updated successfully with token " + req.body.userToken
-    });
-  })
-    .catch(err => {
-      res.status(500).send({
-        message: err.message || "Some error occurred while updating the professional."
-      });
-    });
+
+  } catch (error) {
+    console.error('Error occurred while updating user status:', error);
+    return res.status(500).json({ error: 'An error occurred while updating user status.' });
+  }
+
+  // Status.update(
+  //   {
+  //     statuscode: "RJ5000",
+  //     description: req.body.description.description,
+  //   },
+  //   {
+  //     where: {
+  //       clinicid: user.clinicid
+  //     }
+  //   }
+  // ).then(rowsAffected => {
+  //   if (rowsAffected[0] === 0) {
+  //     return res.status(404).send({
+  //       message: "user not found with token " + req.body.userToken
+  //     });
+  //   }
+  //   emailservice.rejectedmail(user.email, user.clinicName, user.clinicid, descrip);
+  //   res.send({
+  //     message: "user was updated successfully with token " + req.body.userToken
+  //   });
+  // })
+  //   .catch(err => {
+  //     res.status(500).send({
+  //       message: err.message || "Some error occurred while updating the professional."
+  //     });
+  //   });
 }
 
 const approveuser = async (req, res) => {
-  const admin = await Admin.findOne({
-    where: {
-      adminToken: req.body.adminToken
-    }
-  });
-
-  if (!admin) {
-    res.status(404).send({ message: "Cannot find admin with token " + req.body.adminToken })
-  }
-  const user = await User.findOne({
-    where: { userToken: req.body.userToken },
-  });
-
-  const statusDesc = await db.statusdesc.findOne({
-    where: { statuscode: "AC2000" },
-  });
-
-  Status.update(
-    {
-      statuscode: "AC2000",
-    },
-    {
+  try {
+    const admin = await Admin.findOne({
       where: {
-        clinicid: user.clinicid
+        adminToken: req.body.adminToken
       }
-    }
-  ).then(rowsAffected => {
-    if (rowsAffected[0] === 0) {
-      return res.status(404).send({
-        message: "user not found with token " + req.body.userToken
-      });
-    }
-    emailservice.approvedmail(user.email, user.clinicName, user.clinicid);
-    res.send({
-      message: "user was updated successfully with token " + req.body.userToken
     });
-  })
-    .catch(err => {
-      res.status(500).send({
-        message: err.message || "Some error occurred while updating the professional."
-      });
+
+    if (!admin) {
+      res.status(404).send({ message: "Cannot find admin with token " + req.body.adminToken })
+    }
+    const user = await User.findOne({
+      where: { userToken: req.body.userToken },
     });
+
+    const statusDesc = await db.statusdesc.findOne({
+      where: { statuscode: "AC2000" },
+    });
+
+    if (statusDesc) {
+      // Ensure user and status are found before proceeding
+      await user.setStatusdesc(statusDesc);
+      console.log('User status updated successfully.');
+      return res.status(200).json({ message: 'User status updated successfully.' });
+      emailservice.approvedmail(user.email, user.clinicName, user.clinicid);
+      res.send({
+        message: "user was updated successfully with token " + req.body.userToken
+      });
+    } else {
+      console.log('Status code not found in statusdesc table.');
+      return res.status(404).json({ error: 'Status code not found in statusdesc table.' });
+    }
+  } catch (error) {
+    console.error('Error occurred while updating user status:', error);
+    return res.status(500).json({ error: 'An error occurred while updating user status.' });
+  }
+
+
+
+  // Status.update(
+  //   {
+  //     statuscode: "AC2000",
+  //   },
+  //   {
+  //     where: {
+  //       clinicid: user.clinicid
+  //     }
+  //   }
+  // ).then(rowsAffected => {
+  //   if (rowsAffected[0] === 0) {
+  //     return res.status(404).send({
+  //       message: "user not found with token " + req.body.userToken
+  //     });
+  //   }
+  //   emailservice.approvedmail(user.email, user.clinicName, user.clinicid);
+  //   res.send({
+  //     message: "user was updated successfully with token " + req.body.userToken
+  //   });
+  // })
+  //   .catch(err => {
+  //     res.status(500).send({
+  //       message: err.message || "Some error occurred while updating the professional."
+  //     });
+  //   });
 }
 
 
