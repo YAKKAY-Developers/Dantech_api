@@ -18,8 +18,7 @@ import route in service.js
     insert into statusdescs (id,statuscode,description) VALUE (1,"WA4000","Waiting");
     insert into statusdescs (id,statuscode,description) VALUE (2,"AC2000","Accepted");
     insert into statusdescs (id,statuscode,description) VALUE (3,"RJ5000","Rejected");
-
-ALTER TABLE `dantech`.`assignes`
+    ALTER TABLE `dantech`.`assignes`
 CHANGE COLUMN `createdAt` `createdAt` DATETIME NULL ,
 CHANGE COLUMN `updatedAt` `updatedAt` DATETIME NULL ;
 
