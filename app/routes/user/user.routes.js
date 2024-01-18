@@ -67,6 +67,10 @@ module.exports = app => {
  router.post("/allusercount",user.allUserCount);
  router.post("/getstatus",user.getstatususer)
 
+
+ //get order details
+ router.post("/getuserorders", )
+
  app.use('/api/user', router);
 
 };

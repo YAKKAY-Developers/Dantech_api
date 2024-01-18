@@ -469,18 +469,7 @@ const getOneUser = async (req, res) => {
     var userDesc = user.userdesc;
 
 
-    // Using the alias 'statusdesc->userstatusdesc' to access the associated data
-    // const userStatusDesc = user['statusdesc->userstatusdesc'];
-    // console.log(userStatusDesc)
-
-    // if (!userStatusDesc) {
-    //   return res.status(404).send({
-    //     message: 'UserStatusDesc not found for the user',
-    //   });
-    // }
-
-    // const { statusdesc } = userStatusDesc;
-    // const { statuscode, description } = statusdesc;
+ 
 
     res.status(200).send({
       clinicname,
@@ -748,6 +737,28 @@ const allUserCount = async (req, res) => {
   }
 };
 
+
+//Get one user orders
+const getuserorders = async (req, res) => {
+  try {
+    const user = await User.findOne({
+      where: {
+        adminToken: req.body.userToken
+      }
+    });
+    const order = await Orderforms.findAll()
+    res.status(200).send({
+      order
+    });
+  }
+  catch (err) {
+    res.status(500).send({
+      message:
+        err.message || "Some error occurred while getting order details."
+    });
+  }
+};
+
 module.exports = {
 
   register,
@@ -764,6 +775,7 @@ module.exports = {
   updateUser,
   adminCancelUser,
   allUserCount,
-  getstatus
+  getstatus,
+  getuserorders
 
 };

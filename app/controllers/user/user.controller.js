@@ -72,6 +72,10 @@ exports.getstatususer = (req, res) => {
   userService.getstatus(req, res);
 }
 
+exports.getuserorders = (req, res) =>{
+  userService.getuserorders(req, res);
+}
+
 
 
 
