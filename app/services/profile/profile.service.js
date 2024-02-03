@@ -70,3 +70,6 @@ const profilereg = async (req, res) => {
 module.exports = {
   profilereg,
 }
+
+
+

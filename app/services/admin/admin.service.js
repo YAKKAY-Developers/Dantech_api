@@ -675,7 +675,6 @@ module.exports = {
   register,
   login,
   userregister,
-  //professional password
   forgotpassword,
   resetpassword,
   passwordreset,
